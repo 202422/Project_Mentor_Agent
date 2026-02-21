@@ -1,0 +1,20 @@
+llm:
+  provider: openai
+  model_name: gpt-4o-mini
+  temperature: 0.2
+  max_tokens: 1500
+
+retrieval:
+  top_k: 3
+  chunk_size: 1000
+  chunk_overlap: 100
+
+github:
+  default_repo: Intelligent-system-for-automatic-correction-and-completion-for-short-text-exchange
+
+embeddings:
+  model: text-embedding-3-small
+
+paths:
+  data_dir: ./data
+  persist_dir: ./embeddings
