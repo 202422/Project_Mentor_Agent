@@ -4,6 +4,10 @@ GITHUB_TOOLS_DESCRIPTION = """
 Use action="github" and set action_input to the tool name + parameters as JSON.
 Format: {"tool": "<tool_name>", "params": { ... }}
 
+- owner: GitHub username or org (e.g. "202422")
+- repo:  Repository name (e.g. "Intelligent-system-for-automatic-correction-and-completion-for-short-text-exchange")
+- Parameters marked with ? are optional.
+
 ── REPOSITORY ──────────────────────────────────────────────
 search_repositories(query, page?, per_page?)
   → Search GitHub repositories by keyword.
@@ -91,8 +95,4 @@ search_users(q, sort?, order?, page?, per_page?)
 get_me(reason?)
   → Get details of the currently authenticated GitHub user.
 
-=== PARAMETER NOTES ===
-- owner: GitHub username or org (e.g. "202422")
-- repo:  Repository name (e.g. "Intelligent-system-for-automatic-correction-and-completion-for-short-text-exchange")
-- Parameters marked with ? are optional.
 """

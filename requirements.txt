@@ -26,3 +26,6 @@ rich>=13.0.0
 
 # Optional: For graph visualization (if using get_graph().draw_mermaid_png())
 playwright>=1.40.0
+
+# Gradio
+gradio>=4.0.0

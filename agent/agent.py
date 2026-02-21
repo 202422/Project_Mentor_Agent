@@ -85,15 +85,36 @@ def _call_github_tool(tool_name: str, params: dict) -> tuple:
 
 def _summarise_result(tool_name: str, result) -> str:
     """Convert a tool result into a readable summary for the LLM."""
-    if isinstance(result, list):
-        count   = len(result)
-        preview = json.dumps(result[:3], indent=2) if result else "[]"
-        return f"Tool '{tool_name}' returned {count} item(s):\n{preview}"
-    if isinstance(result, dict):
-        return f"Tool '{tool_name}' result:\n{json.dumps(result, indent=2)[:800]}"
-    if isinstance(result, str):
-        return f"Tool '{tool_name}' result:\n{result[:800]}"
-    return f"Tool '{tool_name}' returned: {str(result)[:400]}"
+    
+    # ─────────────────────────────────────────────────────────────────
+    # Extract actual content from MCP response structure
+    # MCP returns: {"content": [{"type": "text", "text": "..."}]}
+    # ─────────────────────────────────────────────────────────────────
+    content = result
+    if isinstance(result, dict) and "content" in result:
+        content_list = result.get("content", [])
+        if content_list and isinstance(content_list[0], dict):
+            text_content = content_list[0].get("text", "")
+            if isinstance(text_content, str):
+                try:
+                    content = json.loads(text_content)
+                except (json.JSONDecodeError, ValueError):
+                    content = text_content
+
+    # ─────────────────────────────────────────────────────────────────
+    # Return full content without truncation
+    # ─────────────────────────────────────────────────────────────────
+    if isinstance(content, list):
+        count = len(content)
+        return f"Tool '{tool_name}' returned {count} item(s):\n{json.dumps(content, indent=2)}"
+    
+    if isinstance(content, dict):
+        return f"Tool '{tool_name}' result:\n{json.dumps(content, indent=2)}"
+    
+    if isinstance(content, str):
+        return f"Tool '{tool_name}' result:\n{content}"
+    
+    return f"Tool '{tool_name}' returned: {str(content)}"
 
 
 # ══════════════════════════════════════════════════════════════════════════ #
@@ -156,6 +177,27 @@ def kb_node(state: AgentState) -> dict:
     }
 
 
+
+# ══════════════════════════════════════════════════════════════════════════ #
+# Tool parameter requirements                                               #
+# ══════════════════════════════════════════════════════════════════════════ #
+
+# Tools that DON'T require owner/repo parameters
+NO_REPO_TOOLS = {
+    "get_me",              # Get authenticated user info
+    "search_repositories", # Search across all repos
+    "search_code",         # Search code across GitHub
+    "search_users",        # Search users
+    "search_issues",       # Search issues across repos (uses 'q' param)
+    "create_repository",   # Creates a new repo (no existing repo needed)
+}
+
+# Tools that only require 'owner' (not 'repo')
+OWNER_ONLY_TOOLS = {
+    "list_branches",       # Some implementations might use owner only
+}
+
+
 @traceable(run_type="tool", name="GitHub API Call")
 def github_node(state: AgentState) -> dict:
     """
@@ -165,7 +207,7 @@ def github_node(state: AgentState) -> dict:
       Format A (preferred): {"tool": "list_issues", "params": {"owner": "...", "repo": "..."}}
       Format B (fallback):  "README.md"  →  get_file_contents
                             ""           →  list_issues
-    owner/repo auto-injected from state["repo"] when absent.
+    owner/repo auto-injected from state["repo"] when absent (only for tools that need them).
     """
     raw_input = state.get("action_input") or ""
     repo_full = state.get("repo") or ""
@@ -206,11 +248,14 @@ def github_node(state: AgentState) -> dict:
         tool_name = "list_issues"
         params    = {"state": "open"}
 
-    # Inject owner/repo from state when LLM omitted them
-    if default_owner and "owner" not in params:
-        params["owner"] = default_owner
-    if default_repo_name and "repo" not in params:
-        params["repo"] = default_repo_name
+    # ═══════════════════════════════════════════════════════════════════
+    # Inject owner/repo ONLY for tools that require them
+    # ═══════════════════════════════════════════════════════════════════
+    if tool_name not in NO_REPO_TOOLS:
+        if default_owner and "owner" not in params:
+            params["owner"] = default_owner
+        if default_repo_name and "repo" not in params:
+            params["repo"] = default_repo_name
 
     result, error = _call_github_tool(tool_name, params)
 

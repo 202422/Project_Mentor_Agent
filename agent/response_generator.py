@@ -79,6 +79,14 @@ class ResponseGenerator:
             "   - You have retrieved KB or GitHub context and can now synthesize it.",
             "   - The question is simple enough to answer from existing context.",
             "",
+
+            "=== PARAMETER RULES ===",
+"1. **Use ONLY parameters listed in the tool signature** — unlisted params cause errors.",
+"2. **Params with ? are optional**, others are required.",
+"3. **Don't assume 'owner'/'repo' apply to all tools** — check each signature.",
+"4. **No spaces in names** — use hyphens or underscores.",
+"",
+
             GITHUB_TOOLS_DESCRIPTION,
             "",
             "=== REASONING PROTOCOL (STRICT ReAct) ===",
@@ -104,7 +112,7 @@ class ResponseGenerator:
             "}",
             "",
             "When action = \"github\", action_input MUST be a JSON object:",
-            "  {\"tool\": \"<tool_name>\", \"params\": {\"owner\": \"202422\", \"repo\": \"Intelligent-system-for-automatic-correction-and-completion-for-short-text-exchange\", ...}}",
+            "  {\"tool\": \"<tool_name>\", \"params\": { <parameters as specified in tool description> }}",
             "",
             "When action = \"kb\", action_input MUST be a plain search string.",
             "",
@@ -194,8 +202,7 @@ class ResponseGenerator:
             "- Do NOT give git CLI instructions or explain how to do it manually.",
             "- Do NOT say 'you should run git checkout...' — the action was done via API.",
             "- If the action succeeded, confirm it clearly: what was created/updated/deleted.",
-            "- If there was an error, explain what went wrong and suggest a fix.",
-            "- Be brief — 2 to 4 sentences is enough for most confirmations.",
+            "- If there was an error, explain what went wrong and suggest a fix."
             "",
             "GitHub API Result:",
             github_summary,
